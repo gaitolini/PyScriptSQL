@@ -1,1 +1,0 @@
-# gerar_inserts/__init__.py
