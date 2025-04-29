@@ -3,6 +3,23 @@
 from datetime import datetime
 import cx_Oracle
 
+def obter_comentario_campo(cursor, nome_tabela, nome_campo):
+    """Obtém o comentário de um campo específico no Oracle."""
+    try:
+        cursor.execute(f"""
+            SELECT comments
+            FROM user_col_comments
+            WHERE table_name = '{nome_tabela.upper()}'
+            AND column_name = '{nome_campo.upper()}'
+        """)
+        resultado = cursor.fetchone()
+        if resultado and resultado[0]:
+            return resultado[0]
+        return None  # Retorna None se não houver comentário
+    except cx_Oracle.Error as error:
+        print(f"Erro ao buscar comentário para {nome_campo} na tabela {nome_tabela}: {error}")
+        return None
+
 def gerar_script_inclusao_campos(connection, query, nome_tabela):
     output_filename = f"carga_a_campos_{nome_tabela.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
 
@@ -17,20 +34,20 @@ def gerar_script_inclusao_campos(connection, query, nome_tabela):
             with open(output_filename, "w") as sql_file:
                 sql_file.write(f"-- Script para inclusão na tabela A_CAMPOS para a tabela {nome_tabela.upper()} gerado em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                 for column_name in columns:
-                    # Por padrão, FIELDALIAS e COMENTARIO serão baseados no FIELDNAME
-                    field_alias = column_name.replace("_", " ").title()
-                    comentario = field_alias
+                    comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
+                    field_alias = comentario if comentario else column_name.replace("_", " ").title()
+                    data_type = 'VARCHAR2(255)'  # Você pode tentar obter o tipo de dado também, se necessário
 
                     sql_script = f"""
 BEGIN
   INSERT INTO A_CAMPOS (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, COMENTARIO)
-  VALUES ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias}', 'VARCHAR2(255)', '{comentario}');
+  VALUES ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
     NULL;
   WHEN OTHERS THEN
-    RAISE
+    RAISE;
 END;
 /
 """
