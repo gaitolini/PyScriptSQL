@@ -40,8 +40,10 @@ def gerar_script_inclusao_campos(connection, query, nome_tabela):
 
                     sql_script = f"""
 BEGIN
-  INSERT INTO A_CAMPOS (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, COMENTARIO)
-  VALUES ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
+  INSERT INTO A_CAMPOS
+    (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, COMENTARIO)
+  VALUES
+    ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN

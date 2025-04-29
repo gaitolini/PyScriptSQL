@@ -26,8 +26,10 @@ def gerar_script_inclusao_tabela(connection):
             for nome_tabela, descricao, sistema in tabelas_info:
                 sql_script = f"""
 BEGIN
-  INSERT INTO A_TABELAS (TABLENAME, TABLEALIAS, TABLETIPO)
-  VALUES ('{nome_tabela}', '{descricao.replace("'", "''")}', '{sistema}');
+  INSERT INTO A_TABELAS
+    (TABLENAME, TABLEALIAS, TABLETIPO)
+  VALUES
+    ('{nome_tabela}', '{descricao.replace("'", "''")}', '{sistema}');
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
