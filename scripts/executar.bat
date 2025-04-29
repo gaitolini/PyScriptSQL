@@ -1,5 +1,5 @@
 @echo off
-echo Iniciando o Gerador de Scripts SQL...
+echo Iniciando o Gerador de Scripts SQL (CLI)...
 
 where python >nul 2>&1
 if %errorlevel% neq 0 (
@@ -23,8 +23,16 @@ if %errorlevel% neq 0 (
     )
 )
 
-echo Executando o script...
-python gerar_inserts.py
+REM Define explicitamente o diretório de trabalho para a raiz do projeto
+cd /D R:\PYTHON\PyScriptSQL
+if %errorlevel% neq 0 (
+    echo ERRO: Não foi possível mudar para o diretório do projeto.
+    pause
+    exit /b 1
+)
+
+echo Executando o script CLI...
+python -m gerar_inserts.cli
 echo Script finalizado.
 
 echo.
