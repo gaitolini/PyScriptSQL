@@ -1,5 +1,13 @@
 # gerar_inserts/cli.py
 
+import sys
+import os
+
+# Adiciona o diretório pai (raiz do projeto) ao sys.path se não estiver lá
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root_path not in sys.path:
+    sys.path.append(root_path)
+
 from gerar_inserts.oracle_utils import obter_conexao, obter_sequencia
 from gerar_inserts.script_generator import gerar_script_carga
 

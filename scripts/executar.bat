@@ -23,6 +23,14 @@ if %errorlevel% neq 0 (
     )
 )
 
+REM Define explicitamente o diretório de trabalho para a raiz do projeto
+cd /D R:\PYTHON\PyScriptSQL
+if %errorlevel% neq 0 (
+    echo ERRO: Não foi possível mudar para o diretório do projeto.
+    pause
+    exit /b 1
+)
+
 echo Executando o script CLI...
 python -m gerar_inserts.cli
 echo Script finalizado.
