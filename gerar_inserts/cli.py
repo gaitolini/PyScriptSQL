@@ -16,38 +16,36 @@ from gerar_inserts.campos import gerar_script_inclusao_campos, obter_informacoes
 def exibir_menu():
     print("\n--- Gerador de Scripts SQL ---")
     print("Escolha uma opção:")
-    print("1 - SCIncDefault: Gerar INSERTS de carga de dados (funcionalidade original)")
+    print("1 - SCIncDefault: Gerar INSERTS de carga de dados")
     print("2 - SCIncTabelas: Gerar INSERT para a tabela A_TABELAS")
     print("3 - SCIncCampos: Gerar INSERT para a tabela A_CAMPOS")
-    print("0 - Sair")
+    print("0 - Sair e Fechar Conexão")
     return input("Digite o número da opção desejada: ")
 
 def main():
+    connection = obter_conexao()
+    if not connection:
+        print("Não foi possível estabelecer conexão. Encerrando.")
+        return
+
     while True:
         opcao = exibir_menu()
 
         if opcao == '1':
-            connection = obter_conexao()
-            if connection:
-                nome_responsavel = input("Digite o nome do responsável pela geração do script: ")
-                query_usuario = input("Digite a query SELECT para extrair os dados: ")
-                with connection.cursor() as cursor:
-                    usar_sequencia, sequence_name = obter_sequencia(cursor)
-                    gerar_script_carga(cursor, query_usuario, nome_responsavel, usar_sequencia, sequence_name)
-                connection.close()
+            nome_responsavel = input("Digite o nome do responsável pela geração do script: ")
+            query_usuario = input("Digite a query SELECT para extrair os dados: ")
+            with connection.cursor() as cursor:
+                usar_sequencia, sequence_name = obter_sequencia(cursor)
+                gerar_script_carga(cursor, query_usuario, nome_responsavel, usar_sequencia, sequence_name)
         elif opcao == '2':
-            connection = obter_conexao()
-            if connection:
-                gerar_script_inclusao_tabela(connection)
-                connection.close()
+            gerar_script_inclusao_tabela(connection)
         elif opcao == '3':
-            connection = obter_conexao()
-            if connection:
-                nome_tabela, query_campos = obter_informacoes_campos(connection)
-                gerar_script_inclusao_campos(connection, query_campos, nome_tabela)
-                connection.close()
+            nome_tabela, query_campos = obter_informacoes_campos(connection)
+            with connection.cursor() as cursor:
+                gerar_script_inclusao_campos(cursor, query_campos, nome_tabela)
         elif opcao == '0':
-            print("Saindo do Gerador de Scripts SQL.")
+            print("Fechando a conexão com o banco de dados e saindo.")
+            connection.close()
             break
         else:
             print("Opção inválida. Tente novamente.")
