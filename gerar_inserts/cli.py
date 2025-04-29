@@ -38,11 +38,12 @@ def main():
                 usar_sequencia, sequence_name = obter_sequencia(cursor)
                 gerar_script_carga(cursor, query_usuario, nome_responsavel, usar_sequencia, sequence_name)
         elif opcao == '2':
-            gerar_script_inclusao_tabela(connection)
-        elif opcao == '3':
-            nome_tabela, query_campos = obter_informacoes_campos(connection)
             with connection.cursor() as cursor:
-                gerar_script_inclusao_campos(cursor, query_campos, nome_tabela)
+                gerar_script_inclusao_tabela(cursor)
+        elif opcao == '3':
+            query_campos = obter_informacoes_campos(connection)
+            with connection.cursor() as cursor:
+                gerar_script_inclusao_campos(cursor, query_campos)
         elif opcao == '0':
             print("Fechando a conexão com o banco de dados e saindo.")
             connection.close()

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import cx_Oracle
+import re
 
 def obter_comentario_campo(cursor, nome_tabela, nome_campo):
     """Obtém o comentário de um campo específico no Oracle."""
@@ -19,31 +20,79 @@ def obter_comentario_campo(cursor, nome_tabela, nome_campo):
     except cx_Oracle.Error as error:
         print(f"Erro ao buscar comentário para {nome_campo} na tabela {nome_tabela}: {error}")
         return None
-    
-def gerar_script_inclusao_campos(cursor, query, nome_tabela):
+
+def obter_nome_tabela_da_query(query):
+    """Extrai o nome da tabela principal da cláusula FROM de uma query."""
+    match = re.search(r'FROM\s+(\w+(\.\w+)?)\s*', query, re.IGNORECASE)
+    if match:
+        return match.group(1).split('.')[-1].upper()
+    return None
+
+def obter_detalhes_number(cursor, nome_tabela, nome_campo):
+    """Obtém detalhes de precisão e escala para campos NUMBER."""
+    try:
+        cursor.execute(f"""
+            SELECT data_precision, data_scale
+            FROM user_tab_cols
+            WHERE table_name = '{nome_tabela.upper()}'
+            AND column_name = '{nome_campo.upper()}'
+        """)
+        resultado = cursor.fetchone()
+        if resultado:
+            precision = resultado[0]
+            scale = resultado[1]
+            if precision is not None:
+                if scale is not None and scale > 0:
+                    return f'NUMBER({precision},{scale})'
+                else:
+                    return f'NUMBER({precision})'
+            else:
+                return 'NUMBER'
+        return 'NUMBER'
+    except cx_Oracle.Error as error:
+        print(f"Erro ao buscar detalhes do NUMBER para {nome_campo} na tabela {nome_tabela}: {error}")
+        return 'NUMBER'
+
+def gerar_script_inclusao_campos(cursor, query):
+    nome_tabela = obter_nome_tabela_da_query(query)
+    if not nome_tabela:
+        print("Não foi possível identificar o nome da tabela na query.")
+        return
+
     output_filename = f"carga_a_campos_{nome_tabela.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
 
     try:
         cursor.execute(query)
-        columns = [col[0] for col in cursor.description]
-        print(f"DEBUG: Colunas retornadas pela query: {columns}")  # Adicione esta linha
-        if not columns:
+        columns_info = cursor.description
+        if not columns_info:
             print("A query não retornou nenhuma coluna.")
             return
 
         with open(output_filename, "w") as sql_file:
             sql_file.write(f"-- Script para inclusão na tabela A_CAMPOS para a tabela {nome_tabela.upper()} gerado em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-            for column_name in columns:
+            for col_info in columns_info:
+                column_name = col_info[0]
+                data_type_raw = col_info[1]  # Tipo base do Oracle
+                data_type_str = 'VARCHAR2(255)'  # Padrão
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
-                data_type = 'VARCHAR2(255)'  # Você pode tentar obter o tipo de dado também, se necessário
+
+                if data_type_raw == cx_Oracle.DB_TYPE_NUMBER:
+                    data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
+                elif data_type_raw == cx_Oracle.DB_TYPE_DATE or data_type_raw == cx_Oracle.DB_TYPE_TIMESTAMP:
+                    data_type_str = 'DATE'
+                elif data_type_raw == cx_Oracle.DB_TYPE_CLOB:
+                    data_type_str = 'CLOB'
+                else:
+                    # Se não for um tipo conhecido, mantém o padrão ou tenta outra lógica
+                    pass
 
                 sql_script = f"""
 BEGIN
   INSERT INTO A_CAMPOS
     (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, COMENTARIO)
   VALUES
-    ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
+    ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type_str}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
@@ -62,11 +111,5 @@ END;
         print(f"Ocorreu um erro: {error}")
 
 def obter_informacoes_campos(connection):
-    nome_tabela = input("Digite o nome da tabela para os campos: ").strip().upper()
-    query_campos = input(f"Digite a query SELECT para obter os campos da tabela {nome_tabela} (ex: SELECT column_name FROM user_tab_cols WHERE table_name = '{nome_tabela}'): ").strip()
-    return nome_tabela, query_campos
-
-def obter_informacoes_campos(connection):
-    nome_tabela = input("Digite o nome da tabela para os campos: ").strip().upper()
-    query_campos = input(f"Digite a query SELECT para obter os campos da tabela {nome_tabela} (ex: SELECT column_name FROM user_tab_cols WHERE table_name = '{nome_tabela}'): ").strip()
-    return nome_tabela, query_campos
+    query_campos = input("Digite a query SELECT (ex: SELECT column_name FROM sua_tabela): ").strip()
+    return query_campos
