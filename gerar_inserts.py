@@ -58,7 +58,7 @@ def gerar_script_carga(connection, query, nome_responsavel, usar_sequencia, sequ
             with open(output_filename, "w") as sql_file:
                 # Cabeçalho do script
                 sql_file.write(f"prompt  ...... incluindo registros padrões para {table_name}\n")
-                sql_file.write(f"Rem ---------------------------------------------------------------------------\n")
+                sql_file.write(f"Rem  ---------------------------------------------------------------------------\n")
                 sql_file.write(f"Rem  {nome_responsavel} em {datetime.now().strftime('%B')}/{datetime.now().strftime('%Y')}\n")
                 sql_file.write(f"Rem  Geração de INSERTs para a tabela {table_name} com base na query: {query}\n")
 
@@ -80,8 +80,10 @@ def gerar_script_carga(connection, query, nome_responsavel, usar_sequencia, sequ
                     if usar_sequencia and columns and columns[0]: # Assume a primeira coluna é para a sequência
                         sql_insert = f"""
 BEGIN
-  INSERT INTO {table_name} ({columns_str})
-  VALUES ({sequence_name}.NEXTVAL, {values_str.replace(values[0] + ', ', '', 1)});
+  INSERT INTO {table_name}
+    ({columns_str})
+  VALUES
+    ({sequence_name}.NEXTVAL, {values_str.replace(values[0] + ', ', '', 1)});
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
@@ -92,8 +94,10 @@ END;
                     else:
                         sql_insert = f"""
 BEGIN
-  INSERT INTO {table_name} ({columns_str})
-  VALUES ({values_str});
+  INSERT INTO {table_name}
+    ({columns_str})
+  VALUES
+    ({values_str});
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
