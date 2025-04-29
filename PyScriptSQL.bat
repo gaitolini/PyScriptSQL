@@ -1,5 +1,5 @@
 @echo off
-echo Iniciando o Gerador de Scripts SQL...
+echo Iniciando o Gerador de Scripts SQL (CLI)...
 
 where python >nul 2>&1
 if %errorlevel% neq 0 (
@@ -23,8 +23,8 @@ if %errorlevel% neq 0 (
     )
 )
 
-echo Executando o script...
-python gerar_inserts.py
+echo Executando o script CLI...
+python -m gerar_inserts.cli seus_dados.csv -o saida_inserts.sql
 echo Script finalizado.
 
 echo.
