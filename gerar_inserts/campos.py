@@ -77,14 +77,16 @@ def gerar_script_inclusao_campos(cursor, query):
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
-                if data_type_raw == cursor.connection.DB_TYPE_NUMBER:
+                if data_type_raw == cx_Oracle.DB_TYPE_NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw in [cursor.connection.DB_TYPE_VARCHAR, cursor.connection.DB_TYPE_VARCHAR2]:
+                elif data_type_raw in [cx_Oracle.DB_TYPE_VARCHAR, cx_Oracle.DB_TYPE_VARCHAR2]:
                     data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
                     data_type_str = f'VARCHAR2({data_length})'
-                elif data_type_raw in [cursor.connection.DB_TYPE_DATE, cursor.connection.DB_TYPE_TIMESTAMP]:
+                elif data_type_raw == cx_Oracle.DB_TYPE_DATE:
                     data_type_str = 'DATE'
-                elif data_type_raw == cursor.connection.DB_TYPE_CLOB:
+                elif data_type_raw == cx_Oracle.DB_TYPE_TIMESTAMP:
+                    data_type_str = 'DATE' # Ou TIMESTAMP, dependendo da sua necessidade
+                elif data_type_raw == cx_Oracle.DB_TYPE_CLOB:
                     data_type_str = 'CLOB'
                 # Adicione mais mapeamentos conforme necessário
 
@@ -104,7 +106,7 @@ END;
 /
 """
                 sql_file.write(sql_script + "\n")
-            print(f"\nScripts de inclusão para A_CAMPOS para a tabela {nome_tabela.upper()} gerados com sucesso no arquivo: {output_filename}")
+        print(f"\nScripts de inclusão para A_CAMPOS para a tabela {nome_tabela.upper()} gerados com sucesso no arquivo: {output_filename}")
 
     except cx_Oracle.Error as error:
         print(f"Erro ao executar a query: {error}")
