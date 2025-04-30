@@ -87,7 +87,6 @@ def gerar_script_inclusao_campos(cursor, query):
 
         with open(output_filename, "w") as sql_file:
             sql_file.write(f"-- Script para inclusão na tabela A_CAMPOS para a tabela {nome_tabela.upper()} gerado em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-            data_type_str = 'VARCHAR2(255)'  # Valor padrão inicial
             for col_info in columns_info:
                 column_name = col_info[0]
                 data_type_raw = col_info[1]  # Tipo base do Oracle
@@ -95,7 +94,7 @@ def gerar_script_inclusao_campos(cursor, query):
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
-                # Verificação dos tipos de dados corrigida
+                # Determinar o tipo de dado (DATATYPE)
                 if data_type_raw == cx_Oracle.DB_TYPE_NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
                 elif data_type_raw in [cx_Oracle.DB_TYPE_VARCHAR, cx_Oracle.DB_TYPE_CHAR]:
@@ -107,12 +106,25 @@ def gerar_script_inclusao_campos(cursor, query):
                 else:
                     data_type_str = 'VARCHAR2(255)'  # Tipo padrão para outros casos
 
+                # Definir valores para os novos campos (preenchendo com NULL ou valores padrão)
+                selectable = 'NULL'
+                searchable = 'NULL'
+                sortable = 'NULL'
+                autosearch = 'NULL'
+                mandatory = 'NULL'
+                descricao = 'NULL'
+                symbol = 'NULL'
+                tipoimposto = 'NULL'
+                recvalor = "'N'"  # Conforme o exemplo
+                tipoformula = 'NULL'
+                comentario_str = f"'{comentario.replace("'", "''")}'" if comentario else "'null'"
+
                 sql_script = f"""
 BEGIN
   INSERT INTO A_CAMPOS
-    (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, COMENTARIO)
+    (TABLENAME, FIELDNAME, FIELDALIAS, DATATYPE, SELECTABLE, SEARCHABLE, SORTABLE, AUTOSEARCH, MANDATORY, DESCRICAO, SYMBOL, TIPOIMPOSTO, RECVALOR, TIPOFORMULA, COMENTARIO)
   VALUES
-    ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type_str}', '{comentario.replace("'", "''") if comentario else field_alias.replace("'", "''")}');
+    ('{nome_tabela.upper()}', '{column_name.upper()}', '{field_alias.replace("'", "''")}', '{data_type_str}', {selectable}, {searchable}, {sortable}, {autosearch}, {mandatory}, {descricao}, {symbol}, {tipoimposto}, {recvalor}, {tipoformula}, {comentario_str});
   COMMIT;
 EXCEPTION
   WHEN DUP_VAL_ON_INDEX THEN
