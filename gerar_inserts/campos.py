@@ -53,6 +53,8 @@ def obter_detalhes_number(cursor, nome_tabela, nome_campo):
         print(f"Erro ao buscar detalhes do NUMBER para {nome_campo} na tabela {nome_tabela}: {error}")
         return 'NUMBER'
 
+from cx_Oracle import DbType
+
 def gerar_script_inclusao_campos(cursor, query):
     nome_tabela = obter_nome_tabela_da_query(query)
     if not nome_tabela:
@@ -74,18 +76,18 @@ def gerar_script_inclusao_campos(cursor, query):
             for col_info in columns_info:
                 column_name = col_info[0]
                 data_type_raw = col_info[1]  # Tipo base do Oracle
-                print(f"DEBUG: Campo: {column_name}, data_type_raw: {data_type_raw}") # ADICIONE ESTA LINHA
+                print(f"DEBUG: Campo: {column_name}, data_type_raw: {data_type_raw}")
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
-                if data_type_raw == 2:  # NUMBER
+                if data_type_raw == DbType.NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw in [1, 96]:  # VARCHAR2, CHAR
+                elif data_type_raw in [DbType.VARCHAR, DbType.CHAR]:
                     data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
                     data_type_str = f'VARCHAR2({data_length})'
-                elif data_type_raw in [12, 180]:  # DATE, TIMESTAMP
+                elif data_type_raw in [DbType.DATE, DbType.TIMESTAMP]:
                     data_type_str = 'DATE'
-                elif data_type_raw == 112:  # CLOB
+                elif data_type_raw == DbType.CLOB:
                     data_type_str = 'CLOB'
                 # Adicione mais mapeamentos conforme necessário
 
