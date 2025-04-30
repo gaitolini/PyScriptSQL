@@ -55,6 +55,8 @@ def obter_detalhes_number(cursor, nome_tabela, nome_campo):
 
 from cx_Oracle import DbType
 
+from cx_Oracle import DbType
+
 def gerar_script_inclusao_campos(cursor, query):
     nome_tabela = obter_nome_tabela_da_query(query)
     if not nome_tabela:
@@ -80,14 +82,14 @@ def gerar_script_inclusao_campos(cursor, query):
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
-                if data_type_raw == DbType.NUMBER:
+                if data_type_raw == DbType.DB_TYPE_NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw in [DbType.VARCHAR, DbType.CHAR]:
+                elif data_type_raw in [DbType.DB_TYPE_VARCHAR, DbType.DB_TYPE_CHAR]:
                     data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
                     data_type_str = f'VARCHAR2({data_length})'
-                elif data_type_raw in [DbType.DATE, DbType.TIMESTAMP]:
+                elif data_type_raw in [DbType.DB_TYPE_DATE, DbType.DB_TYPE_TIMESTAMP]:
                     data_type_str = 'DATE'
-                elif data_type_raw == DbType.CLOB:
+                elif data_type_raw == DbType.DB_TYPE_CLOB:
                     data_type_str = 'CLOB'
                 # Adicione mais mapeamentos conforme necessário
 
