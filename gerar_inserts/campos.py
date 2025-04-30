@@ -70,10 +70,11 @@ def gerar_script_inclusao_campos(cursor, query):
 
         with open(output_filename, "w") as sql_file:
             sql_file.write(f"-- Script para inclusão na tabela A_CAMPOS para a tabela {nome_tabela.upper()} gerado em {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            data_type_str = 'VARCHAR2(255)'  # Valor padrão inicial
             for col_info in columns_info:
                 column_name = col_info[0]
                 data_type_raw = col_info[1]  # Tipo base do Oracle
-                data_type_str = 'VARCHAR2(255)'  # Valor padrão, será alterado se outro tipo for identificado
+                print(f"DEBUG: Campo: {column_name}, data_type_raw: {data_type_raw}") # ADICIONE ESTA LINHA
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
