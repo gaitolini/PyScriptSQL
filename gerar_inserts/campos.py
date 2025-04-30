@@ -79,13 +79,14 @@ def gerar_script_inclusao_campos(cursor, query):
 
                 if data_type_raw == cx_Oracle.DB_TYPE_NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw == cx_Oracle.DB_TYPE_DATE or data_type_raw == cx_Oracle.DB_TYPE_TIMESTAMP:
+                elif data_type_raw in [cx_Oracle.DB_TYPE_VARCHAR, cx_Oracle.DB_TYPE_VARCHAR2]:
+                    data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
+                    data_type_str = f'VARCHAR2({data_length})'
+                elif data_type_raw in [cx_Oracle.DB_TYPE_DATE, cx_Oracle.DB_TYPE_TIMESTAMP]:
                     data_type_str = 'DATE'
                 elif data_type_raw == cx_Oracle.DB_TYPE_CLOB:
                     data_type_str = 'CLOB'
-                else:
-                    # Se não for um tipo conhecido, mantém o padrão ou tenta outra lógica
-                    pass
+                # Adicione mais mapeamentos conforme necessário
 
                 sql_script = f"""
 BEGIN
@@ -110,6 +111,23 @@ END;
     except Exception as error:
         print(f"Ocorreu um erro: {error}")
 
+def obter_tamanho_varchar(cursor, nome_tabela, nome_campo):
+    """Obtém o tamanho de um campo VARCHAR2."""
+    try:
+        cursor.execute(f"""
+            SELECT data_length
+            FROM user_tab_cols
+            WHERE table_name = '{nome_tabela.upper()}'
+            AND column_name = '{nome_campo.upper()}'
+        """)
+        resultado = cursor.fetchone()
+        if resultado and resultado[0]:
+            return resultado[0]
+        return 255  # Retorno padrão caso não encontre ou erro
+    except cx_Oracle.Error as error:
+        print(f"Erro ao buscar tamanho do VARCHAR2 para {nome_campo} na tabela {nome_tabela}: {error}")
+        return 255
+
 def obter_informacoes_campos(connection):
-    query_campos = input("Digite a query SELECT (ex: SELECT column_name FROM sua_tabela): ").strip()
+    query_campos = input("Digite a query SELECT para obter os campos da tabela (ex: SELECT column_name FROM sua_tabela): ").strip()
     return query_campos
