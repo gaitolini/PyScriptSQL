@@ -73,20 +73,20 @@ def gerar_script_inclusao_campos(cursor, query):
             for col_info in columns_info:
                 column_name = col_info[0]
                 data_type_raw = col_info[1]  # Tipo base do Oracle
-                data_type_str = 'VARCHAR2(255)'  # Padrão
+                data_type_str = 'VARCHAR2(255)'  # Valor padrão, será alterado se outro tipo for identificado
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
                 if data_type_raw == 2:  # NUMBER
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw in [1, 96]:  # VARCHAR2, CHAR (podem ser mapeados para VARCHAR2)
+                elif data_type_raw in [1, 96]:  # VARCHAR2, CHAR
                     data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
                     data_type_str = f'VARCHAR2({data_length})'
                 elif data_type_raw in [12, 180]:  # DATE, TIMESTAMP
                     data_type_str = 'DATE'
                 elif data_type_raw == 112:  # CLOB
                     data_type_str = 'CLOB'
-                # Adicione mais mapeamentos conforme necessário (BLOB=113, etc.)
+                # Adicione mais mapeamentos conforme necessário
 
                 sql_script = f"""
 BEGIN
