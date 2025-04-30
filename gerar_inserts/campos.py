@@ -16,7 +16,7 @@ def obter_comentario_campo(cursor, nome_tabela, nome_campo):
         resultado = cursor.fetchone()
         if resultado and resultado[0]:
             return resultado[0]
-        return None  # Retorna None se não houver comentário
+        return None
     except cx_Oracle.Error as error:
         print(f"Erro ao buscar comentário para {nome_campo} na tabela {nome_tabela}: {error}")
         return None
@@ -53,12 +53,22 @@ def obter_detalhes_number(cursor, nome_tabela, nome_campo):
         print(f"Erro ao buscar detalhes do NUMBER para {nome_campo} na tabela {nome_tabela}: {error}")
         return 'NUMBER'
 
-from cx_Oracle import DbType
-
-from cx_Oracle import DbType
-
-from cx_Oracle import DbType
-from cx_Oracle import DbType
+def obter_tamanho_varchar(cursor, nome_tabela, nome_campo):
+    """Obtém o tamanho de um campo VARCHAR2."""
+    try:
+        cursor.execute(f"""
+            SELECT data_length
+            FROM user_tab_cols
+            WHERE table_name = '{nome_tabela.upper()}'
+            AND column_name = '{nome_campo.upper()}'
+        """)
+        resultado = cursor.fetchone()
+        if resultado and resultado[0]:
+            return resultado[0]
+        return 255
+    except cx_Oracle.Error as error:
+        print(f"Erro ao buscar tamanho do VARCHAR2 para {nome_campo} na tabela {nome_tabela}: {error}")
+        return 255
 
 def gerar_script_inclusao_campos(cursor, query):
     nome_tabela = obter_nome_tabela_da_query(query)
@@ -85,16 +95,17 @@ def gerar_script_inclusao_campos(cursor, query):
                 comentario = obter_comentario_campo(cursor, nome_tabela, column_name)
                 field_alias = comentario if comentario else column_name.replace("_", " ").title()
 
-                if data_type_raw == DbType.DB_TYPE_NUMBER:
+                # Verificação dos tipos de dados corrigida
+                if data_type_raw == cx_Oracle.DB_TYPE_NUMBER:
                     data_type_str = obter_detalhes_number(cursor, nome_tabela, column_name)
-                elif data_type_raw in [DbType.DB_TYPE_VARCHAR, DbType.DB_TYPE_CHAR]:
-                    data_length = obter_tamanho_varchar(cursor, nome_tabela, column_name)
-                    data_type_str = f'VARCHAR2({data_length})'
-                elif data_type_raw in [DbType.DB_TYPE_DATE, DbType.DB_TYPE_TIMESTAMP]:
+                elif data_type_raw in [cx_Oracle.DB_TYPE_VARCHAR, cx_Oracle.DB_TYPE_CHAR]:
+                    data_type_str = f'VARCHAR2({obter_tamanho_varchar(cursor, nome_tabela, column_name)})'
+                elif data_type_raw in [cx_Oracle.DB_TYPE_DATE, cx_Oracle.DB_TYPE_TIMESTAMP]:
                     data_type_str = 'DATE'
-                elif data_type_raw == DbType.DB_TYPE_CLOB:
+                elif data_type_raw == cx_Oracle.DB_TYPE_CLOB:
                     data_type_str = 'CLOB'
-                # Adicione mais mapeamentos conforme necessário
+                else:
+                    data_type_str = 'VARCHAR2(255)'  # Tipo padrão para outros casos
 
                 sql_script = f"""
 BEGIN
@@ -118,23 +129,6 @@ END;
         print(f"Erro ao executar a query: {error}")
     except Exception as error:
         print(f"Ocorreu um erro: {error}")
-
-def obter_tamanho_varchar(cursor, nome_tabela, nome_campo):
-    """Obtém o tamanho de um campo VARCHAR2."""
-    try:
-        cursor.execute(f"""
-            SELECT data_length
-            FROM user_tab_cols
-            WHERE table_name = '{nome_tabela.upper()}'
-            AND column_name = '{nome_campo.upper()}'
-        """)
-        resultado = cursor.fetchone()
-        if resultado and resultado[0]:
-            return resultado[0]
-        return 255  # Retorno padrão caso não encontre ou erro
-    except cx_Oracle.Error as error:
-        print(f"Erro ao buscar tamanho do VARCHAR2 para {nome_campo} na tabela {nome_tabela}: {error}")
-        return 255
 
 def obter_informacoes_campos(connection):
     query_campos = input("Digite a query SELECT para obter os campos da tabela (ex: SELECT column_name FROM sua_tabela): ").strip()
